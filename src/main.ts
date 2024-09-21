@@ -18,8 +18,12 @@ async function bootstrap() {
 
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
+      whitelist: true,               // Filtra los campos que no están en el DTO
+      forbidNonWhitelisted: true,     // Lanza un error si se envían campos no válidos
+      transform: true,                // Habilita la transformación automática de tipos (e.g., string a number)
+      transformOptions: {             // Opcional, para mayor precisión
+        enableImplicitConversion: true,  // Permite la conversión implícita de tipos
+      },
     })
   );
 

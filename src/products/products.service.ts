@@ -1,9 +1,10 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { PrismaClient } from '@prisma/client';
 import { OnModuleInit } from '@nestjs/common';
 import { PaginationDto } from 'src/common';
+import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class ProductsService extends PrismaClient implements OnModuleInit{
@@ -20,14 +21,21 @@ export class ProductsService extends PrismaClient implements OnModuleInit{
   }
 
   async findAll(paginationDto: PaginationDto) {
+    console.log(paginationDto);
 
     const { page, limit } = paginationDto;
+    
+    console.log(paginationDto);
+
+    if (isNaN(page) || isNaN(limit) || page <= 0 || limit <= 0) {
+      throw new Error('Page and limit must be valid positive numbers.');
+    }
 
     const totalPages = await this.product.count({ where: { available: true } });
     const lastPage = Math.ceil(totalPages / limit);
 
     return {
-      data : await this.product.findMany({
+      data: await this.product.findMany({
         skip: (page - 1) * limit,
         take: Number(limit),
         where: { available: true },
@@ -47,7 +55,10 @@ export class ProductsService extends PrismaClient implements OnModuleInit{
     });
 
     if (!product) {
-      throw new NotFoundException(`Product #${id} not found`);
+      throw new RpcException({
+        message: 'Product not found',
+        status: HttpStatus.BAD_REQUEST,
+      });
     }
 
     return product;
